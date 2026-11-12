@@ -146,6 +146,35 @@ h2{font-size:22px;margin:0 0 10px;text-align:center}
 .cal .x{background:none}
 .back{width:100%;background:#fff;border-radius:18px;padding:12px;font-size:20px;font-weight:bold;box-shadow:0 5px 0 rgba(0,0,0,.15)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* せいせき・アルバム */
+.nav{grid-template-columns:repeat(6,1fr)}.nav button{grid-column:span 2}.nav button:nth-child(n+4){grid-column:span 3}
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum{border-radius:16px;padding:10px;color:#fff;text-align:center;font-size:14px;line-height:1.5}
+.sum b{display:block;font-size:26px}
+.sum .sm{font-size:12px;opacity:.95}
+.allsum{display:flex;gap:8px;margin-bottom:10px}.allsum div{flex:1;background:#f3f6ff;border-radius:14px;text-align:center;padding:6px;font-size:13px}.allsum b{display:block;font-size:22px;color:#e2582b}
+#chart{width:100%;height:220px;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:13px;margin-top:4px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.hist{width:100%;border-collapse:collapse;font-size:14px}
+.hist th{font-size:12px;color:#666;font-weight:normal;padding:4px 2px;border-bottom:2px solid #eee}
+.hist td{padding:7px 2px;border-bottom:1px solid #f0f0f4;text-align:center}
+.hist td.l{text-align:left}
+.tag{display:inline-block;color:#fff;border-radius:99px;padding:0 8px;font-size:12px;line-height:1.8;white-space:nowrap}
+.more{display:block;margin:10px auto 0;background:#f3f6ff;border-radius:14px;padding:8px 18px;font-size:15px;font-weight:bold}
+.empty{text-align:center;color:#888;padding:16px 0}
+.album{display:flex;flex-direction:column;gap:0}
+.ev{display:flex;align-items:center;gap:12px;background:#f3f6ff;border-radius:18px;padding:10px 12px;position:relative}
+.ev .pic{font-size:56px;width:72px;text-align:center;line-height:1.1;flex:none}
+.ev .nm{font-weight:bold;font-size:19px}
+.ev .dt{font-size:14px;color:#555}
+.ev.on{background:#fff7d6;box-shadow:0 0 0 3px var(--gold) inset}
+.ev.off .pic{filter:grayscale(1) brightness(0);opacity:.25}
+.ev.off .nm{color:#999}
+.ev.cur:after{content:"いまのすがた";position:absolute;right:10px;top:8px;background:#e2582b;color:#fff;border-radius:99px;font-size:12px;padding:0 8px;line-height:1.8}
+.arrow{text-align:center;font-size:20px;color:#bbb;line-height:1.4}
+.bk{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.bk button{background:#f3f6ff;border-radius:14px;padding:10px 4px;font-size:15px;font-weight:bold;box-shadow:0 3px 0 rgba(0,0,0,.1)}
 </style>
 </head>
 <body>
@@ -189,6 +218,8 @@ h2{font-size:22px;margin:0 0 10px;text-align:center}
     <button data-go="badges"><span>🏅</span>バッジ</button>
     <button data-go="calendar"><span>📅</span>スタンプ</button>
     <button data-go="shop"><span>👒</span>きせかえ</button>
+    <button data-go="record"><span>📊</span>せいせき</button>
+    <button data-go="album"><span>📷</span>アルバム</button>
   </div>
   <button class="reset" id="reset">きろくをぜんぶけす</button>
 </section>
@@ -259,6 +290,32 @@ h2{font-size:22px;margin:0 0 10px;text-align:center}
   <div class="card"><h2>👒 きせかえやさん</h2><div style="text-align:center">つかえるポイント <b id="scoin" style="font-size:26px;color:#e2582b"></b></div></div>
   <div class="card"><h2>あいぼうのぼうし</h2><div id="hats"></div></div>
   <div class="card"><h2>はいけい</h2><div id="bgs"></div></div>
+  <button class="back" data-go="home">もどる</button>
+</section>
+
+<!-- せいせき -->
+<section class="screen" id="record">
+  <div class="card"><h2>📊 せいせき</h2>
+    <div class="allsum"><div>あそんだ回数<b id="rcPlays">0</b></div><div>せいかい数<b id="rcOk">0</b></div><div>せいかいりつ<b id="rcRate">-</b></div></div>
+    <div class="sumgrid" id="sumgrid"></div>
+  </div>
+  <div class="card"><h2>せいかいりつの うつりかわり</h2>
+    <canvas id="chart"></canvas>
+    <div class="legend" id="legend"></div>
+    <p class="small" style="text-align:center;margin:4px 0 0">さいきんの30回ぶん(右がいちばん新しい)</p>
+  </div>
+  <div class="card"><h2>これまでのきろく</h2><div id="histbox"></div></div>
+  <div class="card"><h2 style="font-size:17px">🔒 おうちの人へ:きろくのバックアップ</h2>
+    <p class="small" style="margin:0">タブレットを買いかえるときや、ブラウザのデータを消すまえに「書き出す」でファイルに保存してください。「読み込む」で元にもどせます。</p>
+    <div class="bk"><button id="bkOut">💾 書き出す</button><button id="bkIn">📂 読み込む</button></div>
+    <input type="file" id="bkFile" accept=".json,application/json" style="display:none">
+  </div>
+  <button class="back" data-go="home">もどる</button>
+</section>
+
+<!-- しんかアルバム -->
+<section class="screen" id="album">
+  <div class="card"><h2>📷 しんかアルバム</h2><div class="album" id="albumbox"></div></div>
   <button class="back" data-go="home">もどる</button>
 </section>
 
@@ -435,8 +492,10 @@ const SAY_NG=['おしい! つぎはできるよ','だいじょうぶ、おぼえ
 
 /* ===== ほぞん ===== */
 const KEY='wakuwaku_quiz_v1';
-const DEF={total:0,coin:0,badges:{},days:[],wrong:{},seen:{},played:{},plays:0,okN:0,owned:{h0:1,b0:1},hat:'h0',bg:'b0',mute:false};
-let S=load();
+const DEF={total:0,coin:0,badges:{},days:[],wrong:{},seen:{},played:{},plays:0,okN:0,owned:{h0:1,b0:1},hat:'h0',bg:'b0',mute:false,hist:[],evo:{}};
+let S=load();migrate();
+/* 記録をはじめる前に進化していた姿は 'pre'(日付なし) */
+function migrate(){if(!Array.isArray(S.hist))S.hist=[];if(!S.evo||typeof S.evo!=='object')S.evo={};const k=level(S.total);for(let i=0;i<=k;i++)if(!S.evo[i]&&(i>0||S.plays>0))S.evo[i]='pre';save()}
 function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||'{}');return Object.assign(JSON.parse(JSON.stringify(DEF)),j)}catch(e){return JSON.parse(JSON.stringify(DEF))}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
@@ -452,7 +511,7 @@ function streakDays(){let n=0;const d=new Date();if(!S.days.includes(dstr(d)))d.
 function charaHTML(){const l=LV[level(S.total)],h=HATS.find(x=>x.id===S.hat)||HATS[0];return (h.e?'<span class="hat">'+h.e+'</span>':'')+l.e}
 function react(el,cls){el.classList.remove('jump','sad');void el.offsetWidth;el.classList.add(cls)}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0);document.body.classList.remove('rainbow');$('flames').classList.remove('on');
-  if(id==='home')renderHome();if(id==='badges')renderBadges();if(id==='calendar')renderCal();if(id==='shop')renderShop()}
+  if(id==='home')renderHome();if(id==='badges')renderBadges();if(id==='calendar')renderCal();if(id==='shop')renderShop();if(id==='record')renderRecord();if(id==='album')renderAlbum()}
 
 /* ===== おと ===== */
 let AC=null;
@@ -584,6 +643,9 @@ function finish(){
  if(streakDays()>=3)give('day3');if(S.days.length>=7)give('day7');
  if(S.okN>=100)give('ok100');if(S.okN>=300)give('ok300');
  const after=level(S.total);if(after===LV.length-1)give('dragon');
+ const nst=perfect?3:G.ok>=n*.7?2:G.ok>=n*.4?1:0;
+ S.hist.push({t:Date.now(),m:G.mode,ok:G.ok,n,sc:G.score,st:nst,mx:G.max});if(S.hist.length>500)S.hist=S.hist.slice(-500);
+ if(!S.evo[0])S.evo[0]=td;for(let i=before+1;i<=after;i++)S.evo[i]=td;
  save();
  show('result');
  $('rhead').textContent=perfect?'🎊 ぜんもんせいかい! 🎊':G.ok>=n*.7?'すごい! よくできました':'おつかれさま! またちょうせんしよう';
@@ -601,7 +663,48 @@ function finish(){
   },300+nstar*350+300);
  });
 }
-function levelUp(a,b){$('ovem').innerHTML=LV[b].e;$('ovhd').textContent='しんかした!';$('ovtx').innerHTML=LV[a].e+' ➡ '+LV[b].e+'<br>あいぼうが「<b>'+LV[b].n+'</b>」になった!<br>しょうごうは「<b>'+LV[b].t+'</b>」';$('ov').classList.add('on');SFX.fanfare();confetti(200);fireworks(5)}
+function levelUp(a,b){$('ovem').innerHTML=LV[b].e;$('ovhd').textContent='しんかした!';$('ovtx').innerHTML=LV[a].e+' ➡ '+LV[b].e+'<br>あいぼうが「<b>'+LV[b].n+'</b>」になった!<br>しょうごうは「<b>'+LV[b].t+'</b>」<br>📷 しんかアルバムに きろくしたよ!';$('ov').classList.add('on');SFX.fanfare();confetti(200);fireworks(5)}
+
+/* ===== せいせき ===== */
+const MODE={kokugo:{n:'国語',c:'#ff6b6b'},sansu:{n:'算数',c:'#4d9bff'},rika:{n:'理科',c:'#3fbf6f'},shakai:{n:'社会',c:'#ff9f2e'},mix:{n:'ミックス',c:'#9b6bff'},review:{n:'ふくしゅう',c:'#7a8499'}};
+let histShow=20;
+function jdate(t,withTime){const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+(withTime?' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'):'')}
+function renderRecord(){
+ const H=S.hist,tok=H.reduce((a,h)=>a+h.ok,0),tn=H.reduce((a,h)=>a+h.n,0);
+ $('rcPlays').textContent=H.length;$('rcOk').textContent=tok;$('rcRate').textContent=tn?Math.round(tok/tn*100)+'%':'-';
+ $('sumgrid').innerHTML=Object.keys(MODE).map(m=>{const hs=H.filter(h=>h.m===m),ok=hs.reduce((a,h)=>a+h.ok,0),n=hs.reduce((a,h)=>a+h.n,0),best=hs.reduce((a,h)=>Math.max(a,h.sc),0);
+  return '<div class="sum" style="background:'+MODE[m].c+'">'+MODE[m].n+'<b>'+(n?Math.round(ok/n*100)+'%':'-')+'</b><span class="sm">'+hs.length+'回 / ベスト '+best+'ポイント</span></div>'}).join('');
+ drawChart();
+ if(!H.length){$('histbox').innerHTML='<div class="empty">まだきろくがないよ。クイズであそんでみよう!</div>'}
+ else{const rows=H.slice().reverse().slice(0,histShow).map(h=>'<tr><td class="l">'+jdate(h.t,1)+'</td><td><span class="tag" style="background:'+(MODE[h.m]||MODE.mix).c+'">'+(MODE[h.m]||MODE.mix).n+'</span></td><td><b>'+h.ok+'</b>/'+h.n+'</td><td>'+h.sc+'</td><td>'+('⭐'.repeat(h.st)||'-')+'</td></tr>').join('');
+  $('histbox').innerHTML='<table class="hist"><tr><th class="l">日にち</th><th>教科</th><th>せいかい</th><th>ポイント</th><th>ほし</th></tr>'+rows+'</table>'+(H.length>histShow?'<button class="more" id="more">もっと見る(のこり'+(H.length-histShow)+'回)</button>':'');
+  const mb=$('more');if(mb)mb.onclick=()=>{histShow+=30;renderRecord()}}
+}
+function drawChart(){
+ const c=$('chart'),dpr=window.devicePixelRatio||1,W=c.clientWidth||300,Hh=220;c.width=W*dpr;c.height=Hh*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);x.clearRect(0,0,W,Hh);
+ const L=44,R=12,T=10,B=24,pw=W-L-R,ph=Hh-T-B,data=S.hist.slice(-30);
+ x.font='12px sans-serif';x.textAlign='right';x.textBaseline='middle';
+ [0,50,100].forEach(v=>{const y=T+ph*(1-v/100);x.strokeStyle=v===100||v===0?'#ddd':'#eee';x.setLineDash(v===50?[4,4]:[]);x.beginPath();x.moveTo(L,y);x.lineTo(W-R,y);x.stroke();x.fillStyle='#888';x.fillText(v+'%',L-4,y)});x.setLineDash([]);
+ if(!data.length){x.textAlign='center';x.fillStyle='#999';x.fillText('あそぶと グラフが出るよ',W/2,T+ph/2);$('legend').innerHTML='';return}
+ const px=i=>data.length===1?L+pw/2:L+pw*i/(data.length-1),py=h=>T+ph*(1-h.ok/h.n);
+ const used=[...new Set(data.map(h=>h.m))];
+ used.forEach(m=>{const pts=data.map((h,i)=>h.m===m?[px(i),py(h)]:null).filter(Boolean);x.strokeStyle=MODE[m].c;x.lineWidth=2.5;x.globalAlpha=.6;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();x.globalAlpha=1;
+  pts.forEach(p=>{x.fillStyle='#fff';x.beginPath();x.arc(p[0],p[1],5.5,0,6.283);x.fill();x.fillStyle=MODE[m].c;x.beginPath();x.arc(p[0],p[1],4,0,6.283);x.fill()})});
+ x.textAlign='center';x.textBaseline='top';x.fillStyle='#888';x.fillText(jdate(data[0].t),Math.max(L+16,px(0)),T+ph+6);if(data.length>1)x.fillText(jdate(data[data.length-1].t),Math.min(W-R-16,px(data.length-1)),T+ph+6);
+ $('legend').innerHTML=used.map(m=>'<span><i style="background:'+MODE[m].c+'"></i>'+MODE[m].n+'</span>').join('');
+}
+/* ===== しんかアルバム ===== */
+function renderAlbum(){const k=level(S.total);
+ $('albumbox').innerHTML=LV.map((l,i)=>{const d=S.evo[i],on=!!d;let dt;
+  if(!on)dt=i>k?'あと '+(l.p-S.total)+' ポイントで しんか!':'';
+  else if(d==='pre')dt='きろくをはじめるまえに しんか';
+  else{const a=d.split('-');dt=a[0]+'年'+(+a[1])+'月'+(+a[2])+'日に '+(i?'しんか!':'うまれたよ')}
+  return (i?'<div class="arrow">▼</div>':'')+'<div class="ev '+(on?'on':'off')+(i===k&&on?' cur':'')+'"><div class="pic">'+l.e+'</div><div><div class="nm">'+(on?l.n:'???')+'</div><div class="dt">しょうごう「'+(on?l.t:'???')+'」</div><div class="dt">'+dt+'</div></div></div>'}).join('')}
+/* ===== バックアップ ===== */
+function backupOut(){try{const blob=new Blob([JSON.stringify({app:'wakuwaku_quiz',v:1,saved:Date.now(),data:S})],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='わくわくクイズ_きろく_'+dstr(new Date())+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}catch(e){alert('書き出しにしっぱいしました')}}
+function backupIn(f){const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(j.app!=='wakuwaku_quiz'||!j.data||typeof j.data.total!=='number')throw 0;
+  if(!confirm('いまのきろくを、このファイルのきろくに おきかえます。よろしいですか?\n(ファイルのポイント:'+j.data.total+')'))return;
+  S=Object.assign(JSON.parse(JSON.stringify(DEF)),j.data);migrate();alert('読み込みました');show('record')}catch(e){alert('このファイルは読み込めません')}};r.readAsText(f)}
 
 /* ===== バッジ・スタンプ・きせかえ ===== */
 function renderBadges(){const n=BADGES.filter(b=>S.badges[b.id]).length;$('bcount').textContent=n+' / '+BADGES.length;
@@ -635,8 +738,10 @@ $('rhome').onclick=()=>{SFX.click();show('home')};
 $('ovok').onclick=()=>{$('ov').classList.remove('on');SFX.click()};
 $('mute').onclick=()=>{S.mute=!S.mute;save();$('mute').textContent=S.mute?'🔇':'🔊';SFX.click()};
 $('chara').onclick=()=>{react($('chara'),'jump');$('say').textContent=pick(SAY_HOME);SFX.click()};
+$('bkOut').onclick=backupOut;$('bkIn').onclick=()=>$('bkFile').click();$('bkFile').onchange=e=>{const f=e.target.files[0];if(f)backupIn(f);e.target.value=''};
+addEventListener('resize',()=>{if($('record').classList.contains('on'))drawChart()});
 $('hats').onclick=shopClick;$('bgs').onclick=shopClick;
-$('reset').onclick=()=>{if(confirm('ポイントもバッジも ぜんぶきえるよ。ほんとうにけす?')&&confirm('もういちど かくにん。けしていい?')){try{localStorage.removeItem(KEY)}catch(e){}S=load();show('home')}};
+$('reset').onclick=()=>{if(confirm('ポイントもバッジも ぜんぶきえるよ。ほんとうにけす?')&&confirm('もういちど かくにん。けしていい?')){try{localStorage.removeItem(KEY)}catch(e){}S=load();migrate();show('home')}};
 renderHome();
 </script>
 </body>
