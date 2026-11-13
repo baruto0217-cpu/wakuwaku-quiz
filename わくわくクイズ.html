@@ -741,9 +741,18 @@ function startRevenge(){
  $('flames').classList.remove('on');document.body.classList.remove('rainbow');
  SFX.gold();comboBanner('💥 リベンジタイム!');showQ();
 }
-function plain(t){return String(t).replace(/\{([^|}]*)\|([^}]*)\}/g,'$2').replace(/\[\[|\]\]/g,'').replace(/[(（][^)）]*[)）]/g,'')}
+function plain(t){
+ t=String(t).replace(/\{([^|}]*)\|([^}]*)\}(?=(.?))/g,(m,b,r,nx)=>(b.length>=2||!/[ぁ-ん]/.test(nx))?b:r).replace(/\[\[|\]\]/g,'').replace(/[(（][^)）]*[)）]/g,'');
+ t=t.replace(/(ミカン|サンショウ|キャベツ)(など)?の\s*は(?=[をが。]|$)/g,'$1$2の葉').replace(/は・くき・ね/g,'葉・くき・根').replace(/ねは土/g,'根は土');
+ const U=[['km','キロメートル'],['kg','キログラム'],['cm','センチメートル'],['dL','デシリットル'],['mL','ミリリットル'],['L','リットル'],['m','メートル'],['g','グラム'],['t','トン']];
+ U.forEach(([a,b])=>{t=t.replace(new RegExp('(\\d)'+a+'(?![A-Za-z])','g'),'$1'+b)});
+ t=t.replace(/\+きょく/g,'プラスきょく').replace(/[−-]きょく/g,'マイナスきょく')
+  .replace(/×/g,'かける').replace(/÷/g,'わる').replace(/\+/g,'たす').replace(/\s*[−-]\s*/g,'ひく').replace(/=/g,'は')
+  .replace(/\s*→\s*/g,'、').replace(/⇔/g,'と').replace(/□/g,'しかく').replace(/○/g,'まる').replace(/〒/g,'ゆうびんのマーク');
+ return t.replace(/([^A-Za-z0-9])\s+|\s+(?=[^A-Za-z0-9])/g,'$1');
+}
 let jaVoice=null;
-function pickVoice(){try{const v=speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang));jaVoice=v.find(v=>/kyoko|o-ren|otoya|female|nanami/i.test(v.name))||v[0]||null}catch(e){}}
+function pickVoice(){try{const v=speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang));jaVoice=v.find(v=>/拡張|enhanced|premium|プレミアム/i.test(v.name))||v.find(v=>/kyoko|o-ren|otoya|female|nanami/i.test(v.name))||v[0]||null}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
 function sayEx(q){
  if(S.mute||!window.speechSynthesis)return;
