@@ -98,6 +98,9 @@ h2{font-size:22px;margin:0 0 10px;text-align:center}
 .fb .bd{text-align:center;font-size:15px;color:#555;min-height:1.4em}
 .fb .bd b{display:inline-block;background:#fff3c4;border-radius:99px;padding:0 10px;margin:2px}
 .fb .ex{background:#f3f6ff;border-radius:14px;padding:10px 12px;font-size:17px;line-height:2;margin:8px 0}
+.qcard.rv{outline:4px solid #ff5a5a;background:#fff4f4}
+.next:disabled{opacity:.55;box-shadow:none}
+.say2{border:none;background:#e8eeff;border-radius:99px;padding:2px 12px;font-size:15px;margin-left:6px}
 .next{width:100%;background:var(--purple);color:#fff;font-size:22px;font-weight:bold;border-radius:18px;padding:12px;box-shadow:0 5px 0 #6a44c4}
 .mini{display:flex;align-items:center;gap:8px;font-size:15px}
 .mini .chara{font-size:46px;width:60px;animation:none}
@@ -730,16 +733,34 @@ function build(mode){
 function start(mode){
  if(mode==='review'&&!Object.keys(S.wrong).length){$('say').textContent='まちがえたもんだいは ないよ。すごい!';react($('chara'),'jump');return}
  lastMode=mode;const qs=build(mode);const gold={};gold[rnd(qs.length)]=1;if(Math.random()<.45)gold[rnd(qs.length)]=1;
- G={mode,qs,i:0,score:0,streak:0,max:0,ok:0,fast:0,gold,goldHit:0,log:[],done:false};
+ G={mode,qs,i:0,score:0,streak:0,max:0,ok:0,fast:0,gold,goldHit:0,log:[],done:false,n0:qs.length,miss:[],rv:false,rvOk:0,rvN:0};
  $('qscore').textContent=0;show('quiz');showQ();
 }
+function startRevenge(){
+ G.rv=true;G.qs=shuffle(G.miss.slice());G.rvN=G.qs.length;G.i=0;G.log=[];G.gold={};G.streak=0;
+ $('flames').classList.remove('on');document.body.classList.remove('rainbow');
+ SFX.gold();comboBanner('💥 リベンジタイム!');showQ();
+}
+function plain(t){return String(t).replace(/\{([^|}]*)\|([^}]*)\}/g,'$2').replace(/\[\[|\]\]/g,'').replace(/[(（][^)）]*[)）]/g,'')}
+let jaVoice=null;
+function pickVoice(){try{const v=speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang));jaVoice=v.find(v=>/kyoko|o-ren|otoya|female|nanami/i.test(v.name))||v[0]||null}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
+function sayEx(q){
+ if(S.mute||!window.speechSynthesis)return;
+ try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('こたえは、'+plain(q.ch[0])+'。'+plain(q.ex));u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=.95;u.pitch=1.15;speechSynthesis.speak(u)}catch(e){}
+}
+function stopSay(){try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}clearInterval(G&&G.lockT)}
+function lockNext(sec){
+ const b=$('next');b.disabled=true;let k=sec;b.textContent='よんでね… '+k;
+ G.lockT=setInterval(()=>{k--;if(k<=0){clearInterval(G.lockT);b.disabled=false;b.textContent=b.dataset.lb}else b.textContent='よんでね… '+k},1000);
+}
 function showQ(){
- const q=G.qs[G.i],n=G.qs.length;G.done=false;
- $('prog').textContent=(G.i+1)+' / '+n+' もんめ';
+ const q=G.qs[G.i],n=G.qs.length;G.done=false;clearInterval(G.lockT);$('next').disabled=false;
+ $('prog').textContent=(G.rv?'💥リベンジ ':'')+(G.i+1)+' / '+n+' もんめ';
  $('dots').innerHTML=G.qs.map((_,k)=>'<i class="'+(k<G.i?(G.log[k]?'ok':'ng'):k===G.i?'now':'')+'"></i>').join('');
  const su=SUBJ[q.s];$('qsubj').textContent=su.e+' '+su.n;$('qsubj').style.background=su.c;
  $('qtext').innerHTML=fmt(q.q);
- const isG=!!G.gold[G.i];$('qcard').classList.toggle('gold',isG);if(isG){SFX.gold();const r=$('qcard').getBoundingClientRect();stars(r.left+r.width/2,r.top+20,14)}
+ const isG=!!G.gold[G.i];$('qcard').classList.toggle('gold',isG);$('qcard').classList.toggle('rv',!!G.rv);if(isG){SFX.gold();const r=$('qcard').getBoundingClientRect();stars(r.left+r.width/2,r.top+20,14)}
  const order=shuffle([0,1,2,3]);G.order=order;
  $('choices').innerHTML=order.map((c,k)=>'<button class="choice" data-k="'+k+'"><span class="k">'+'アイウエ'[k]+'</span><span>'+fmt(q.ch[c])+'</span></button>').join('');
  $('fb').classList.remove('on');
@@ -752,8 +773,15 @@ function answer(k,btn){
  $('tbar').style.animationPlayState='paused';
  const bs=[...document.querySelectorAll('.choice')];
  bs.forEach((b,j)=>{b.disabled=true;if(G.order[j]===0)b.classList.add('right');else if(j===k)b.classList.add('miss');else b.classList.add('dim')});
- G.log[G.i]=ok;let bd='';
- if(ok){
+ G.log[G.i]=ok;let bd='';stopSay();
+ if(G.rv){
+  if(ok){G.rvOk++;const from=G.score;G.score+=5;bd='<b>💥リベンジせいかい +5</b>';
+   SFX.ok();const r=btn.getBoundingClientRect();sparks(r.left+r.width/2,r.top+r.height/2,30);confetti(60);stars(r.left+r.width/2,r.top,10);
+   fly(btn,'+5');setTimeout(()=>countTo($('qscore'),from,G.score,350),800);
+   $('res').className='res ok';$('res').textContent='💥 リベンジせいこう!';$('qsay').textContent='かいせつを よんだから わかったね!';
+  }else{SFX.ng();const qc=$('qcard');qc.classList.remove('shake');void qc.offsetWidth;qc.classList.add('shake');
+   $('res').className='res ng';$('res').textContent='おしい!';bd='こたえは「'+fmt(q.ch[0])+'」だよ';$('qsay').textContent='かいせつを いっしょに よもう!';}
+ }else if(ok){
   G.streak++;G.max=Math.max(G.max,G.streak);G.ok++;S.okN++;
   let p=10;bd='<b>せいかい +10</b>';
   if(G.streak===2){p+=5;bd+='<b>🔥コンボ +5</b>'}else if(G.streak>=3){p+=10;bd+='<b>🔥コンボ +10</b>'}
@@ -773,17 +801,19 @@ function answer(k,btn){
   $('flames').classList.remove('on');document.body.classList.remove('rainbow');
   const qc=$('qcard');qc.classList.remove('shake');void qc.offsetWidth;qc.classList.add('shake');
   $('res').className='res ng';$('res').textContent='おしい!';bd='こたえは「'+fmt(q.ch[0])+'」だよ';
-  $('qsay').textContent=pick(SAY_NG);
+  $('qsay').textContent='かいせつを よむよ。さいごに リベンジタイムが あるよ!';G.miss.push(q);
  }
  $('bd').innerHTML=bd;$('ex').innerHTML='💡 '+fmt(q.ex);
  $('qchara').innerHTML=charaHTML();
- $('next').textContent=G.i===G.qs.length-1?'けっかを見る 🎉':'つぎへ ▶';
+ const lastQ=G.i===G.qs.length-1,goRv=lastQ&&!G.rv&&G.miss.length;
+ $('next').dataset.lb=goRv?'💥 リベンジタイムへ ▶':lastQ?'けっかを見る 🎉':'つぎへ ▶';$('next').textContent=$('next').dataset.lb;
+ if(!ok){$('ex').innerHTML+='<button class="say2" id="sayagain">🔊 もういちど きく</button>';$('sayagain').onclick=()=>sayEx(q);sayEx(q);lockNext(3)}
  $('dots').children[G.i].className=ok?'ok':'ng';
  $('fb').classList.add('on');react($('qchara'),ok?'jump':'sad');save();
  setTimeout(()=>$('fb').scrollIntoView({behavior:'smooth',block:'nearest'}),350);
 }
 function finish(){
- const n=G.qs.length,perfect=G.ok===n;
+ stopSay();const n=G.n0||G.qs.length,perfect=G.ok===n;
  S.total+=G.score;S.coin+=G.score;S.plays++;
  const td=dstr(new Date());if(!S.days.includes(td))S.days.push(td);
  if(SUBJ[G.mode])S.played[G.mode]=1;
@@ -801,7 +831,7 @@ function finish(){
  const evs=advance(td);
  if((S.reach[0]||0)>=4)give('dragon');if(S.line>=1)give('line2');if(LINES.every((_,i)=>(S.reach[i]||0)>=4))give('alllines');
  const nst=perfect?3:G.ok>=n*.7?2:G.ok>=n*.4?1:0;
- S.hist.push({t:Date.now(),m:G.mode,ok:G.ok,n,sc:G.score,st:nst,mx:G.max});if(S.hist.length>500)S.hist=S.hist.slice(-500);
+ S.hist.push({t:Date.now(),m:G.mode,ok:G.ok,n,sc:G.score,st:nst,mx:G.max,rv:G.rvOk,rvn:G.rvN});if(S.hist.length>500)S.hist=S.hist.slice(-500);
  save();
  show('result');
  $('rhead').textContent=perfect?'🎊 ぜんもんせいかい! 🎊':G.ok>=n*.7?'すごい! よくできました':'おつかれさま! またちょうせんしよう';
@@ -813,7 +843,7 @@ function finish(){
   SFX.cymbal();confetti(perfect?220:G.ok>=n*.7?120:50);if(perfect)fireworks(6);
   st.forEach((s,i)=>{if(i<nstar)setTimeout(()=>{s.classList.add('on');tone(880+i*220,0,.2,'triangle',.2)},300+i*350)});
   setTimeout(()=>{
-   $('rnew').innerHTML=got.map(b=>'<div class="newb">'+b.e+' あたらしいバッジ「<b>'+b.n+'</b>」をゲット!</div>').join('');
+   $('rnew').innerHTML=(G.rvN?'<div class="newb">💥 リベンジ '+G.rvOk+' / '+G.rvN+' もん せいこう!</div>':'')+got.map(b=>'<div class="newb">'+b.e+' あたらしいバッジ「<b>'+b.n+'</b>」をゲット!</div>').join('');
    if(got.length){SFX.gold();stars(cv.width/2,cv.height*.6,20)}
    if(evs.length)setTimeout(()=>playEvents(evs),got.length?1200:300);
   },300+nstar*350+300);
@@ -902,8 +932,8 @@ function shopClick(e){const b=e.target.closest('button');if(!b)return;const t=b.
 document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{SFX.click();start(b.dataset.m)});
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{SFX.click();show(b.dataset.go)});
 $('choices').onclick=e=>{const b=e.target.closest('.choice');if(b)answer(+b.dataset.k,b)};
-$('next').onclick=()=>{SFX.click();if(G.i<G.qs.length-1){G.i++;showQ()}else finish()};
-$('quit').onclick=()=>{if(confirm('とちゅうでやめる?(このかいのポイントは入らないよ)')){save();show('home')}};
+$('next').onclick=()=>{if($('next').disabled)return;SFX.click();stopSay();if(G.i<G.qs.length-1){G.i++;showQ()}else if(!G.rv&&G.miss.length)startRevenge();else finish()};
+$('quit').onclick=()=>{stopSay();if(G.rv){if(confirm('リベンジタイムを おわりにして、けっかを見る?'))finish();return}if(confirm('とちゅうでやめる?(このかいのポイントは入らないよ)')){save();show('home')}};
 $('again').onclick=()=>{SFX.click();if(lastMode==='review'&&!Object.keys(S.wrong).length)show('home');else start(lastMode)};
 $('rhome').onclick=()=>{SFX.click();show('home')};
 $('ovok').onclick=()=>{$('ov').classList.remove('on');SFX.click();if(OVQ.length)setTimeout(()=>ovShow(OVQ.shift()),350)};
