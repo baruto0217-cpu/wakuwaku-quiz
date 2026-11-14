@@ -760,9 +760,12 @@ function sayEx(q){
 }
 function stopSay(){try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}clearInterval(G&&G.lockT)}
 function lockNext(sec){
- const b=$('next');b.disabled=true;let k=sec;b.textContent='よんでね… '+k;
- G.lockT=setInterval(()=>{k--;if(k<=0){clearInterval(G.lockT);b.disabled=false;b.textContent=b.dataset.lb}else b.textContent='よんでね… '+k},1000);
+ const b=$('next');b.disabled=true;const t0=Date.now();b.textContent='よんでね… '+sec;
+ G.lockT=setInterval(()=>{const el=(Date.now()-t0)/1000,sp=!!(window.speechSynthesis&&speechSynthesis.speaking&&!S.mute);
+  if(el>=sec&&(!sp||el>=15)){clearInterval(G.lockT);b.disabled=false;b.textContent=b.dataset.lb}
+  else b.textContent=sp?'きいてね… 🔊':'よんでね… '+Math.max(1,Math.ceil(sec-el))},250);
 }
+
 function showQ(){
  const q=G.qs[G.i],n=G.qs.length;G.done=false;clearInterval(G.lockT);$('next').disabled=false;
  $('prog').textContent=(G.rv?'💥リベンジ ':'')+(G.i+1)+' / '+n+' もんめ';
